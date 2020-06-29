@@ -124,3 +124,45 @@ pub async fn del(key: &str, con: &mut redis::aio::Connection) -> String {
     Err(_) => "".to_string()
   }
 }
+
+/**
+used to get the substring of the string value stored at the key,
+determined by the offsets start and end (both are inclusive).
+Negative offsets can be used in order to provide an offset starting from the end of the string.
+```
+async fn shoult_get_range(con: &mut redis::aio::Connection) {
+  strings::set("key44", "this is me", con).await;
+  let get_result = strings::get_range("key44", 0, 3, con).await;
+  let get_result_all = strings::get_range("key44", 0, -1, con).await;
+
+  assert_eq!(get_result_all, "this is me");
+}
+
+use learn_redis_with_rust::connection;
+use learn_redis_with_rust::strings;
+
+#[tokio::main]
+async fn tests() -> Result<(), ()> {
+  let con_result = connection::connect("redis://127.0.0.1/").await;
+
+  match con_result {
+    Ok(mut con) => {
+      shoult_get_range(&mut con).await;
+
+      Ok(())
+    },
+    Err(_) => panic!("can not connect to db"),
+  }
+}
+
+tests();
+```
+*/
+
+pub async fn get_range(key: &str, start: u8, end: i8, con: &mut redis::aio::Connection) -> String {
+  let result = redis::cmd("GETRANGE").arg(key).arg(start).arg(end).query_async::<redis::aio::Connection, String>(con).await;
+  match result {
+    Ok(value) => value,
+    Err(_) => "".to_string()
+  }
+}
