@@ -4,165 +4,178 @@ Redis strings commands are used for managing string values in Redis.
 
 */
 
-/**
-Sets string
 
-```
-async fn should_set(con: &mut redis::aio::Connection) {
-  strings::del("excellent-key", con).await;
-  strings::set("excellent-key", "my-value", con).await;
-  let get_result = strings::get("excellent-key", con).await;
-
-  assert_eq!(get_result, "my-value");
+pub struct Strings {
+  con: redis::aio::Connection,
 }
 
-use learn_redis_with_rust::connection;
-use learn_redis_with_rust::strings;
-
-#[tokio::main]
-async fn tests() -> Result<(), ()> {
-  let con_result = connection::connect("redis://127.0.0.1/").await;
-
-  match con_result {
-    Ok(mut con) => {
-      should_set(&mut con).await;
-
-      Ok(())
-    },
-    Err(_) => panic!("can not connect to db"),
+impl Strings {
+  pub fn new(con: redis::aio::Connection) -> Self {
+    Strings {
+      con
+    }
   }
-}
 
-tests();
-```
-*/
+  /**
+  Sets string
 
-pub async fn set(key: &str, value: &str, con: &mut redis::aio::Connection) -> u8 {
-  let result = redis::cmd("SET").arg(key).arg(value).query_async::<redis::aio::Connection, u8>(con).await;
-  match result {
-    Ok(value) => value,
-    Err(_) => 0
+  ```
+  async fn should_set(redis_strings: &mut strings::Strings) {
+    redis_strings.del("excellent-key").await;
+    redis_strings.set("excellent-key", "my-value").await;
+    let get_result = redis_strings.get("excellent-key").await;
+
+    assert_eq!(get_result, "my-value");
   }
-}
 
-/**
-Gets string
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
 
-```
-async fn should_get(con: &mut redis::aio::Connection) {
-  strings::del("excellent-key", con).await;
-  strings::set("excellent-key", "my-value", con).await;
-  let get_result = strings::get("excellent-key", con).await;
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
 
-  assert_eq!(get_result, "my-value");
-}
+    match con_result {
+      Ok(mut con) => {
+        should_set(&mut strings::Strings::new(con)).await;
 
-use learn_redis_with_rust::connection;
-use learn_redis_with_rust::strings;
-
-#[tokio::main]
-async fn tests() -> Result<(), ()> {
-  let con_result = connection::connect("redis://127.0.0.1/").await;
-
-  match con_result {
-    Ok(mut con) => {
-      should_get(&mut con).await;
-
-      Ok(())
-    },
-    Err(_) => panic!("can not connect to db"),
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
   }
-}
 
-tests();
-```
-*/
+  tests();
+  ```
+  */
 
-pub async fn get(key: &str, con: &mut redis::aio::Connection) -> String {
-  let result = redis::cmd("GET").arg(key).query_async::<redis::aio::Connection, String>(con).await;
-  match result {
-    Ok(value) => value,
-    Err(_) => "".to_string()
+  pub async fn set(&mut self, key: &str, value: &str) -> u8 {
+    let result = redis::cmd("SET").arg(key).arg(value).query_async::<redis::aio::Connection, u8>(&mut self.con).await;
+    match result {
+      Ok(value) => value,
+      Err(_) => 0
+    }
   }
-}
 
-/**
-Deletes string
-```
-async fn should_delete(con: &mut redis::aio::Connection) {
-  strings::del("excellent-key", con).await;
-  let get_result = strings::get("excellent-key", con).await;
+  /**
+  Gets string
 
-  assert_eq!(get_result, "");
-}
+  ```
+  async fn should_get(redis_strings: &mut strings::Strings) {
+    redis_strings.del("excellent-key").await;
+    redis_strings.set("excellent-key", "my-value").await;
+    let get_result = redis_strings.get("excellent-key").await;
 
-use learn_redis_with_rust::connection;
-use learn_redis_with_rust::strings;
-
-#[tokio::main]
-async fn tests() -> Result<(), ()> {
-  let con_result = connection::connect("redis://127.0.0.1/").await;
-
-  match con_result {
-    Ok(mut con) => {
-      should_delete(&mut con).await;
-
-      Ok(())
-    },
-    Err(_) => panic!("can not connect to db"),
+    assert_eq!(get_result, "my-value");
   }
-}
 
-tests();
-```
-*/
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
 
-pub async fn del(key: &str, con: &mut redis::aio::Connection) -> String {
-  let result = redis::cmd("DEL").arg(key).query_async::<redis::aio::Connection, String>(con).await;
-  match result {
-    Ok(value) => value,
-    Err(_) => "".to_string()
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        should_get(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
   }
-}
 
-/**
-used to get the substring of the string value stored at the key,
-determined by the offsets start and end (both are inclusive).
-Negative offsets can be used in order to provide an offset starting from the end of the string.
-```
-async fn shoult_get_range(con: &mut redis::aio::Connection) {
-  strings::set("key44", "this is me", con).await;
-  let get_result = strings::get_range("key44", 0, 3, con).await;
-  let get_result_all = strings::get_range("key44", 0, -1, con).await;
+  tests();
+  ```
+  */
 
-  assert_eq!(get_result_all, "this is me");
-}
-
-use learn_redis_with_rust::connection;
-use learn_redis_with_rust::strings;
-
-#[tokio::main]
-async fn tests() -> Result<(), ()> {
-  let con_result = connection::connect("redis://127.0.0.1/").await;
-
-  match con_result {
-    Ok(mut con) => {
-      shoult_get_range(&mut con).await;
-
-      Ok(())
-    },
-    Err(_) => panic!("can not connect to db"),
+  pub async fn get(&mut self, key: &str) -> String {
+    let result = redis::cmd("GET").arg(key).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    match result {
+      Ok(value) => value,
+      Err(_) => "".to_string()
+    }
   }
-}
 
-tests();
-```
-*/
+  /**
+  Deletes string
+  ```
+  async fn should_delete(redis_strings: &mut strings::Strings) {
+    redis_strings.del("excellent-key").await;
+    let get_result = redis_strings.get("excellent-key").await;
 
-pub async fn get_range(key: &str, start: u8, end: i8, con: &mut redis::aio::Connection) -> String {
-  let result = redis::cmd("GETRANGE").arg(key).arg(start).arg(end).query_async::<redis::aio::Connection, String>(con).await;
-  match result {
-    Ok(value) => value,
-    Err(_) => "".to_string()
+    assert_eq!(get_result, "");
+  }
+
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
+
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        should_delete(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
+  }
+
+  tests();
+  ```
+  */
+
+  pub async fn del(&mut self, key: &str) -> String {
+    let result = redis::cmd("DEL").arg(key).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    match result {
+      Ok(value) => value,
+      Err(_) => "".to_string()
+    }
+  }
+
+  /**
+  used to get the substring of the string value stored at the key,
+  determined by the offsets start and end (both are inclusive).
+  Negative offsets can be used in order to provide an offset starting from the end of the string.
+  ```
+  async fn shoult_get_range(redis_strings: &mut strings::Strings) {
+    redis_strings.set("key44", "this is me").await;
+    let get_result = redis_strings.get_range("key44", 0, 3).await;
+    let get_result_all = redis_strings.get_range("key44", 0, -1).await;
+
+    assert_eq!(get_result_all, "this is me");
+  }
+
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
+
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        shoult_get_range(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
+  }
+
+  tests();
+  ```
+  */
+
+  pub async fn get_range(&mut self, key: &str, start: u8, end: i8) -> String {
+    let result = redis::cmd("GETRANGE").arg(key).arg(start).arg(end).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    match result {
+      Ok(value) => value,
+      Err(_) => "".to_string()
+    }
   }
 }

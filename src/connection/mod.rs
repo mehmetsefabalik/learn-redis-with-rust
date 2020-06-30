@@ -18,17 +18,18 @@ async fn should_connect_and_do_stuff() -> Result<(), ()> {
 
   match con_result {
     Ok(mut con) => {
-      strings::del("excellent-key", &mut con).await;
-      strings::set("excellent-key", "my-value", &mut con).await;
-      let get_result = strings::get("excellent-key", &mut con).await;
+      let mut redis_strings = strings::Strings::new(con);
+      redis_strings.del("excellent-key").await;
+      redis_strings.set("excellent-key", "my-value").await;
+      let get_result = redis_strings.get("excellent-key").await;
 
       assert_eq!(get_result, "my-value");
 
-      strings::del("excellent-key", &mut con).await;
-      let get_result = strings::get("excellent-key", &mut con).await;
+      redis_strings.del("excellent-key").await;
+      let get_result = redis_strings.get("excellent-key").await;
       assert_eq!(get_result, "");
 
-      strings::del("excellent-key", &mut con).await;
+      redis_strings.del("excellent-key").await;
       Ok(())
     },
     Err(_) => panic!("can not connect to db"),
@@ -40,6 +41,7 @@ should_connect_and_do_stuff();
 ```
 
 */
+
 
 pub async fn connect(uri: &str) -> redis::RedisResult<redis::aio::Connection> {
   let client = redis::Client::open(uri).unwrap();
