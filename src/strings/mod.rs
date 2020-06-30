@@ -178,4 +178,47 @@ impl Strings {
       Err(_) => "".to_string()
     }
   }
+
+  /**
+  sets the specified string value in Redis key and returns its old value.
+  ```
+  async fn shoult_get_set(redis_strings: &mut strings::Strings) {
+    redis_strings.set("key44", "this is me").await;
+    let get_set_result = redis_strings.get_set("key44", "this is set").await;
+
+    assert_eq!(get_set_result, "this is me");
+
+    let get_result = redis_strings.get("key44").await;
+
+    assert_eq!(get_result, "this is set");
+  }
+
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
+
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        shoult_get_set(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
+  }
+
+  tests();
+  ```
+  */
+
+  pub async fn get_set(&mut self, key: &str, value: &str) -> String {
+    let result = redis::cmd("GETSET").arg(key).arg(value).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    match result {
+      Ok(value) => value,
+      Err(_) => "".to_string()
+    }
+  }
 }
