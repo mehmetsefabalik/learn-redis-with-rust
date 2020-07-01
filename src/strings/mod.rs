@@ -4,16 +4,13 @@ Redis strings commands are used for managing string values in Redis.
 
 */
 
-
 pub struct Strings {
   con: redis::aio::Connection,
 }
 
 impl Strings {
   pub fn new(con: redis::aio::Connection) -> Self {
-    Strings {
-      con
-    }
+    Strings { con }
   }
 
   /**
@@ -50,10 +47,14 @@ impl Strings {
   */
 
   pub async fn set(&mut self, key: &str, value: &str) -> u8 {
-    let result = redis::cmd("SET").arg(key).arg(value).query_async::<redis::aio::Connection, u8>(&mut self.con).await;
+    let result = redis::cmd("SET")
+      .arg(key)
+      .arg(value)
+      .query_async::<redis::aio::Connection, u8>(&mut self.con)
+      .await;
     match result {
       Ok(value) => value,
-      Err(_) => 0
+      Err(_) => 0,
     }
   }
 
@@ -91,10 +92,13 @@ impl Strings {
   */
 
   pub async fn get(&mut self, key: &str) -> String {
-    let result = redis::cmd("GET").arg(key).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    let result = redis::cmd("GET")
+      .arg(key)
+      .query_async::<redis::aio::Connection, String>(&mut self.con)
+      .await;
     match result {
       Ok(value) => value,
-      Err(_) => "".to_string()
+      Err(_) => "".to_string(),
     }
   }
 
@@ -130,10 +134,13 @@ impl Strings {
   */
 
   pub async fn del(&mut self, key: &str) -> String {
-    let result = redis::cmd("DEL").arg(key).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    let result = redis::cmd("DEL")
+      .arg(key)
+      .query_async::<redis::aio::Connection, String>(&mut self.con)
+      .await;
     match result {
       Ok(value) => value,
-      Err(_) => "".to_string()
+      Err(_) => "".to_string(),
     }
   }
 
@@ -172,10 +179,15 @@ impl Strings {
   */
 
   pub async fn get_range(&mut self, key: &str, start: u8, end: i8) -> String {
-    let result = redis::cmd("GETRANGE").arg(key).arg(start).arg(end).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    let result = redis::cmd("GETRANGE")
+      .arg(key)
+      .arg(start)
+      .arg(end)
+      .query_async::<redis::aio::Connection, String>(&mut self.con)
+      .await;
     match result {
       Ok(value) => value,
-      Err(_) => "".to_string()
+      Err(_) => "".to_string(),
     }
   }
 
@@ -215,10 +227,109 @@ impl Strings {
   */
 
   pub async fn get_set(&mut self, key: &str, value: &str) -> String {
-    let result = redis::cmd("GETSET").arg(key).arg(value).query_async::<redis::aio::Connection, String>(&mut self.con).await;
+    let result = redis::cmd("GETSET")
+      .arg(key)
+      .arg(value)
+      .query_async::<redis::aio::Connection, String>(&mut self.con)
+      .await;
     match result {
       Ok(value) => value,
-      Err(_) => "".to_string()
+      Err(_) => "".to_string(),
+    }
+  }
+
+  /**
+  used to get the bit value at the offset in the string value stored at the key.
+  ```
+  async fn shoult_get_bit(redis_strings: &mut strings::Strings) {
+    redis_strings.set_bit("bitkey", 5044, 1).await;
+    let get_bit_result = redis_strings.get_bit("bitkey", 5044).await;
+
+    assert_eq!(get_bit_result, 1);
+
+    let empty_get_bit_result = redis_strings.get_bit("bitkey", 500).await;
+
+    assert_eq!(empty_get_bit_result, 0);
+  }
+
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
+
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        shoult_get_bit(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
+  }
+
+  tests();
+  ```
+  */
+
+  pub async fn get_bit(&mut self, key: &str, offset: u16) -> u8 {
+    let result = redis::cmd("GETBIT")
+      .arg(key)
+      .arg(offset)
+      .query_async::<redis::aio::Connection, u8>(&mut self.con)
+      .await;
+    match result {
+      Ok(value) => value,
+      Err(_) => 0,
+    }
+  }
+
+  /**
+  used to set the bit value at the offset in the string value stored at the key.
+  ```
+  async fn shoult_get_bit(redis_strings: &mut strings::Strings) {
+    redis_strings.set_bit("bitkey", 5044, 1).await;
+    let get_bit_result = redis_strings.get_bit("bitkey", 5044).await;
+
+    assert_eq!(get_bit_result, 1);
+
+    let empty_get_bit_result = redis_strings.get_bit("bitkey", 500).await;
+
+    assert_eq!(empty_get_bit_result, 0);
+  }
+
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
+
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        shoult_get_bit(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
+  }
+
+  tests();
+  ```
+  */
+
+  pub async fn set_bit(&mut self, key: &str, offset: u16, value: u8) -> u8 {
+    let result = redis::cmd("SETBIT")
+      .arg(key)
+      .arg(offset)
+      .arg(value)
+      .query_async::<redis::aio::Connection, u8>(&mut self.con)
+      .await;
+    match result {
+      Ok(value) => value,
+      Err(_) => 0,
     }
   }
 }
