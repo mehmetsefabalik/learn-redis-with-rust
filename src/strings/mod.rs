@@ -286,7 +286,7 @@ impl Strings {
   }
 
   /**
-  used to set the bit value at the offset in the string value stored at the key.
+  used to get the bit value at the offset in the string value stored at the key.
   ```
   async fn shoult_get_bit(redis_strings: &mut strings::Strings) {
     redis_strings.set_bit("bitkey", 5044, 1).await;
@@ -330,6 +330,50 @@ impl Strings {
     match result {
       Ok(value) => value,
       Err(_) => 0,
+    }
+  }
+
+  /**
+  used to get the values of all specified keys.
+  ```
+  async fn shoult_mget(redis_strings: &mut strings::Strings) {
+    redis_strings.set("key1", "value1").await;
+    redis_strings.set("key2", "value2").await;
+
+    let values = redis_strings.mget(vec!["key1", "key2"]).await;
+
+    assert_eq!(values, ["value1", "value2"]);
+  }
+
+  use learn_redis_with_rust::connection;
+  use learn_redis_with_rust::strings;
+
+  #[tokio::main]
+  async fn tests() -> Result<(), ()> {
+    let con_result = connection::connect("redis://127.0.0.1/").await;
+
+    match con_result {
+      Ok(mut con) => {
+        shoult_mget(&mut strings::Strings::new(con)).await;
+
+        Ok(())
+      },
+      Err(_) => panic!("can not connect to db"),
+    }
+  }
+
+  tests();
+  ```
+  */
+
+  pub async fn mget(&mut self, keys: Vec<&str>) -> Vec<String> {
+    let result = redis::cmd("MGET")
+      .arg(keys)
+      .query_async::<redis::aio::Connection, Vec<String>>(&mut self.con)
+      .await;
+    match result {
+      Ok(value) => value,
+      Err(_) => vec!["".to_string()],
     }
   }
 }
